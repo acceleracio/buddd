@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgeting App with Login, Save, Multiple Inputs, Zoom and Scroll</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000; /* Black background */
+            color: #fff; /* White text */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to the top */
+            height: 100vh; /* Full viewport height */
+            overflow-y: auto; /* Enable vertical scrolling */
+            zoom: 1; /* Default zoom */
+        }
+
+        .container {
+            background-color: #1a1a1a; /* Dark gray background for the container */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); /* Light shadow */
+            max-width: 400px;
+            width: 100%;
+            margin: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 5px;
+        }
+
+        input {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: #333; /* Dark background for inputs */
+            color: #fff; /* White text for inputs */
+        }
+
+        button {
+            padding: 10px;
+            background-color: #007bff; /* Blue background */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s; /* Transition effects */
+        }
+
+        button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+            transform: scale(1.05); /* Slightly enlarge on hover */
+        }
+
+        .add-button {
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .input-group input {
+            width: 60%;
+        }
+
+        .input-group button {
+            background-color: #dc3545; /* Red background for remove button */
+            margin-left: 10px;
+        }
+
+        #results {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #results h2, #results h3 {
+            margin-bottom: 10px;
+        }
+
+        #savings, #balance {
+            font-weight: bold;
+        }
+
+        #login {
+            display: none;
+        }
+
+        #logout-btn {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #dc3545; /* Red background for logout button */
+        }
+
+        .zoom-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .zoom-controls button {
+            padding: 5px 10px;
+            background-color: #28a745; /* Green background */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            margin: 0 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s; /* Transition effects */
+        }
+
+        .zoom-controls button:hover {
+            background-color: #218838; /* Darker green on hover */
+            transform: scale(1.05); /* Slightly enlarge on hover */
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Budgeting App</h1>
+
+        <div id="login">
+            <form id="login-form">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+                <button type="button" onclick="login()">Login</button>
+            </form>
+        </div>
+
+        <div id="budget" style="display: none;">
+            <form id="budget-form">
+                <h2>Income</h2>
+                <div id="income-list"></div>
+                <button type="button" class="add-button" onclick="addInputField('income-list', 'income')">Add Income Source</button>
+
+                <h2>Expenditure (Needs)</h2>
+                <div id="needs-list"></div>
+                <button type="button" class="add-button" onclick="addInputField('needs-list', 'needs')">Add Need Expenditure</button>
+
+                <h2>Expenditure (Wants)</h2>
+                <div id="wants-list"></div>
+                <button type="button" class="add-button" onclick="addInputField('wants-list', 'wants')">Add Want Expenditure</button>
+
+                <button type="button" onclick="calculateAndSave()">Calculate and Save</button>
+            </form>
+
+            <div id="results">
+                <h2>Savings: <span id="savings">0</span></h2>
+                <h3>Your current balance is: <span id="balance">0</span></h3>
+            </div>
+
+            <button id="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="zoom-controls">
+            <button onclick="zoomIn()">Zoom In</button>
+            <button onclick="zoomOut()">Zoom Out</button>
+        </div>
+    </div>
+
+    <script>
+        // Check if the user is already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            const userEmail = localStorage.getItem('userEmail');
+            if (userEmail) {
+                showBudgetForm();
+                loadSavedData(userEmail);
+            } else {
+                showLoginForm();
+            }
+        });
+
+        function login() {
+            const email = document.getElementById('email').value;
+            if (email) {
+                localStorage.setItem('userEmail', email);
+                showBudgetForm();
+            }
+        }
+
+        function showLoginForm() {
+            document.getElementById('login').style.display = 'block';
+            document.getElementById('budget').style.display = 'none';
+        }
+
+        function showBudgetForm() {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('budget').style.display = 'block';
+            document.getElementById('logout-btn').style.display = 'block';
+        }
+
+        function addInputField(containerId, type) {
+            const container = document.getElementById(containerId);
+
+            const div = document.createElement('div');
+            div.classList.add('input-group');
+
+            const inputLabel = document.createElement('input');
+            inputLabel.type = 'text';
+            inputLabel.placeholder = `Enter ${type} description`;
+
+            const inputValue = document.createElement('input');
+            inputValue.type = 'number';
+            inputValue.placeholder = `Enter ${type} amount`;
+
+            const removeButton = document.createElement('button');
+            removeButton.textContent = 'Remove';
+            removeButton.type = 'button';
+            removeButton.onclick = function() {
+                container.removeChild(div);
+            };
+
+            div.appendChild(inputLabel);
+            div.appendChild(inputValue);
+            div.appendChild(removeButton);
+
+            container.appendChild(div);
+        }
+
+        function calculateAndSave() {
+            const income = sumInputValues('income-list');
+            const needs = sumInputValues('needs-list');
+            const wants = sumInputValues('wants-list');
+
+            const totalExpenditure = needs + wants;
+            const savings = income - totalExpenditure;
+
+            // Display the results
+            document.getElementById('savings').textContent = savings;
+            document.getElementById('balance').textContent = savings;
+
+            // Save the data to localStorage
+            const userEmail = localStorage.getItem('userEmail');
+            const budgetData = {
+                income: income,
+                needs: needs,
+                wants: wants,
+                savings: savings
+            };
+
+            localStorage.setItem(userEmail + '_budget', JSON.stringify(budgetData));
+        }
+
+        function sumInputValues(containerId) {
+            const container = document.getElementById(containerId);
+            const inputs = container.querySelectorAll('input[type="number"]');
+            let sum = 0;
+            inputs.forEach(input => {
+                sum += parseFloat(input.value) || 0;
+            });
+            return sum;
+        }
+
+        function loadSavedData(email) {
+            const savedData = localStorage.getItem(email + '_budget');
+            if (savedData) {
+                const budgetData = JSON.parse(savedData);
+                loadInputFields('income-list', budgetData.income, 'income');
+                loadInputFields('needs-list', budgetData.needs, 'needs');
+                loadInputFields('wants-list', budgetData.wants, 'wants');
+                document.getElementById('savings').textContent = budgetData.savings;
+                document.getElementById('balance').textContent = budgetData.savings;
+            }
+        }
+
+        function loadInputFields(containerId, value, type) {
+            // Add input fields with saved data (if available)
+            const container = document.getElementById(containerId);
+            const data = Array.isArray(value) ? value : [value];
+
+            data.forEach((item) => {
+                const div = document.createElement('div');
+                div.classList.add('input-group');
+
+                const inputLabel = document.createElement('input');
+                inputLabel.type = 'text';
+                inputLabel.placeholder = `Enter ${type} description`;
+                inputLabel.value = item.description || '';
+
+                const inputValue = document.createElement('input');
+                inputValue.type = 'number';
+                inputValue.placeholder = `Enter ${type} amount`;
+                inputValue.value = item.amount || 0;
+
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Remove';
+                removeButton.type = 'button';
+                removeButton.onclick = function() {
+                    container.removeChild(div);
+                };
+
+                div.appendChild(inputLabel);
+                div.appendChild(inputValue);
+                div.appendChild(removeButton);
+
+                container.appendChild(div);
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem(localStorage.getItem('userEmail') + '_budget');
+            showLoginForm();
+            document.getElementById('login-form').reset();
+            document.getElementById('budget-form').reset();
+            document.getElementById('savings').textContent = '0';
+            document.getElementById('balance').textContent = '0';
+        }
+
+        // Zoom In/Out functionality
+        let zoomLevel = 1;
+
+        function zoomIn() {
+            zoomLevel += 0.1;
+            document.body.style.zoom = zoomLevel;
+        }
+
+        function zoomOut() {
+            if (zoomLevel > 0.1) {
+                zoomLevel -= 0.1;
+                document.body.style.zoom = zoomLevel;
+            }
+        }
+    </script>
+</body>
+</html>

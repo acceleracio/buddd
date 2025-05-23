@@ -56,7 +56,7 @@
         </div>
     </div>
     
-    <iframe id="budContent" src="/home/index.html"></iframe>
+    <iframe id="budContent" src="home/index.html"></iframe>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';

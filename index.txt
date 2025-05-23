@@ -48,6 +48,7 @@
 <body>
     <div id="otpModal">
         <div id="otpForm">
+            <h1>This is OTP Login</h1>
             <h2>Enter OTP to Access</h2>
             <input type="email" id="emailInput" placeholder="Enter your email" required>
             <input type="text" id="otpInput" placeholder="Enter OTP" required maxlength="6">
@@ -56,7 +57,7 @@
         </div>
     </div>
     
-    <iframe id="budContent" src="home/index.html"></iframe>
+    <iframe id="budContent" src="/home/index.html"></iframe>
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
